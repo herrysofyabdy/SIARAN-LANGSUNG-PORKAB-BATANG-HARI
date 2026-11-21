@@ -4,6 +4,11 @@
 <base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Catur Live">
+<meta name="theme-color" content="#0c2384">
 <title>Papan Catur Live</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -324,7 +329,18 @@ body.vert .mlist{max-height:30vh}
 
 <script>
 {
-const BOOT=<?!= boot ?>;
+/* ===== ALAMAT APLIKASI WEB APPS SCRIPT (ganti jika deployment berubah) ===== */
+const API='https://script.google.com/macros/s/AKfycbzBsdPzRr8pj6q2FJUaofGWxInEjiG-e3ECkghgVajl7tsHT_HDorIRGt8_Wx0uXu7m3Q/exec';
+/* ========================================================================== */
+const IN_GAS=typeof google!=='undefined'&&!!(google.script&&google.script.run);
+const BOOT={mode:'',url:''};
+function boot(cb){
+  if(IN_GAS&&google.script.url){BOOT.url=API;google.script.url.getLocation(l=>{const p=(l&&l.parameter)||{};BOOT.mode=('layar' in p)?'layar':('tonton' in p)?'tonton':'';cb();});return;}
+  const Q=new URLSearchParams(location.search);
+  BOOT.mode=Q.has('layar')?'layar':Q.has('tonton')?'tonton':'';
+  BOOT.url=(location.protocol==='http:'||location.protocol==='https:')?location.origin+location.pathname:API;
+  cb();
+}
 const $=s=>document.querySelector(s);
 const FILES='abcdefgh',MAXB=12,LS='caturLiveKode';
 const GL={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -438,7 +454,11 @@ function autoResult(d){
 }
 
 /* ---------- server ---------- */
-const call=(fn,...a)=>new Promise((res,rej)=>{google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a);});
+const call=(fn,...a)=>IN_GAS
+  ?new Promise((res,rej)=>{google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a);})
+  :fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn,args:a})})
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(r=>{if(r&&r.__err)throw new Error(r.__err);return r;});
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const p2=n=>String(n).padStart(2,'0');
 let ARCHURL='',ARCH=[],AG=null,QRON=null,CODE='',WHO=null,ST=null,VER=-1,OFF=0,CODES=[],pending=0,editing=0,TAY=false,VIEW='all',ACT=0,sel=null,promo=null,pollT=null;
@@ -912,7 +932,7 @@ function first(t0){
     showLogin('');
   }).catch(()=>showLogin('Tidak bisa terhubung ke server.'));
 }
-start();
+boot(start);
 }
 </script>
 </body>
