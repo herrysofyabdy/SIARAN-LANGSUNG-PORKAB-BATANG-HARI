@@ -151,6 +151,19 @@ body.vert .mlist{max-height:30vh}
 .lcard p{margin:0 0 16px;color:var(--mut)}
 .lcard input{width:100%;font:800 22px Nunito,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:#06104a;border:1px solid #6d86d6;border-radius:10px;padding:12px 14px}
 .lcard .btn{width:100%;margin-top:12px;min-height:50px;font-size:18px}
+.lrole{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:18px 0 10px;background:#06104a;padding:4px;border-radius:10px}
+.lrole button{min-height:44px;border:0;border-radius:8px;background:none;color:var(--mut);font:800 15px Nunito,sans-serif;cursor:pointer}
+.lrole button.on{background:var(--acc);color:var(--bg2)}
+.lbig{width:100%;min-height:54px;font-size:18px}
+.lhint{font-size:14px;color:var(--mut);margin:10px 0 0}
+.lor{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:13px;margin:16px 0 0}
+.lor::before,.lor::after{content:'';flex:1;height:1px;background:#3a56b8}
+.opbar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;gap:8px;align-items:center;padding:8px max(10px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px));background:#06104af2;border-top:1px solid #3a56b8;overflow-x:auto}
+.opbar select{flex:1 0 120px;min-height:44px;font:800 15px Nunito,sans-serif;color:var(--ink);background:#1a3196;border:1px solid #3a56b8;border-radius:8px;padding:0 8px}
+.opbar .btn{flex:1 0 auto;min-width:60px;padding:6px 10px}
+body.hasop .toast{bottom:86px}
+body.tayang .opbar{display:none}
+.codes .cbtn{display:flex;gap:6px}
 .lwm{position:absolute;bottom:14px;right:18px;font:700 13px Nunito,sans-serif;opacity:.55}
 .err{color:#ffb4ac;font-weight:700;min-height:1.5em;margin:10px 0 0}
 .linkbtn{background:none;border:0;color:var(--mut);text-decoration:underline;cursor:pointer;padding:12px 0 0;font-weight:700;width:100%}
@@ -205,15 +218,20 @@ body.vert .mlist{max-height:30vh}
 <footer class="wm" id="wm"><div class="qrb" id="qrBox" hidden><div class="qr" id="qrSmall"></div><div>Pindai untuk<br>menonton live</div></div><div class="wmt">Dikembangkan oleh Dr. Herry Sofyandy P., M.Pd</div></footer>
 
 <div class="login" id="login" hidden>
-  <form class="lcard" id="lForm" autocomplete="off">
+  <div class="lcard">
     <div class="lt">Papan Catur Live</div>
-    <p>Masukkan kode akses dari pengelola turnamen.</p>
-    <label for="lCode" style="display:block;font-weight:700;margin-bottom:6px">Kode akses</label>
-    <input id="lCode" autocapitalize="characters" spellcheck="false">
-    <button class="btn pri" id="lGo" type="submit">Masuk</button>
+    <p id="lEv" style="margin:0">Siaran langsung papan catur</p>
+    <button class="btn pri lbig" id="lView" type="button" style="margin-top:16px">Tonton live tanpa login</button>
+    <div class="lor">atau masuk untuk mengendalikan papan</div>
+    <div class="lrole" role="tablist"><button type="button" class="on" data-role="op" role="tab">Operator meja</button><button type="button" data-role="admin" role="tab">Pengelola</button></div>
+    <form id="lForm" autocomplete="off">
+      <label for="lCode" id="lLbl" style="display:block;font-weight:700;margin-bottom:6px">Kode operator</label>
+      <input id="lCode" autocapitalize="characters" spellcheck="false">
+      <button class="btn" id="lGo" type="submit" style="width:100%;margin-top:12px;min-height:50px;font-size:18px">Masuk</button>
+    </form>
     <p class="err" id="lErr"></p>
-    <button class="linkbtn" id="lView" type="button" hidden>Lihat papan saja tanpa kode</button>
-  </form>
+    <p class="lhint" id="lHint">Kode operator diberikan pengelola. Satu kode bisa untuk satu meja atau semua meja.</p>
+  </div>
   <div class="lwm">Dikembangkan oleh Dr. Herry Sofyandy P., M.Pd</div>
 </div>
 
@@ -289,7 +307,11 @@ body.vert .mlist{max-height:30vh}
     <label>Link layar videotron</label>
     <div class="url" id="urlLayar"></div>
     <label>Kode operator</label>
+    <button class="btn wide pri" id="cAuto">Buat kode untuk setiap meja + 1 kode semua meja</button>
+    <button class="btn wide" id="cList">Salin daftar kode untuk WhatsApp</button>
+    <p class="note" id="cNote"></p>
     <ul class="codes" id="codes"></ul>
+    <p class="note">Tambah kode sendiri:</p>
     <div class="row2"><div><label for="cName">Nama operator</label><input id="cName" autocomplete="off"></div><div><label for="cBoards">Papan (kosong = semua)</label><input id="cBoards" placeholder="1,2" autocomplete="off"></div></div>
     <label for="cCode">Kode (min. 4 karakter)</label><input id="cCode" autocomplete="off" autocapitalize="characters">
     <button class="btn wide" id="cAdd">Tambah kode operator</button>
@@ -325,6 +347,12 @@ body.vert .mlist{max-height:30vh}
     </div>
   </div>
 </div>
+<div class="opbar" id="opbar" hidden>
+  <select id="obBoard" aria-label="Meja yang dikendalikan"></select>
+  <button class="btn" id="obUndo">Batal</button>
+  <button class="btn" id="obClock">Jam</button>
+  <button class="btn" id="obRes">Hasil</button>
+</div>
 <div class="toast off" id="toast" role="status"></div>
 
 <script>
@@ -335,9 +363,10 @@ const API='https://script.google.com/macros/s/AKfycbxabEdEl-OJEvOYNP6hJnWkNoyyUp
 const IN_GAS=typeof google!=='undefined'&&!!(google.script&&google.script.run);
 const BOOT={mode:'',url:''};
 function boot(cb){
-  if(IN_GAS&&google.script.url){BOOT.url=API;google.script.url.getLocation(l=>{const p=(l&&l.parameter)||{};BOOT.mode=('layar' in p)?'layar':('tonton' in p)?'tonton':'';cb();});return;}
+  if(IN_GAS&&google.script.url){BOOT.url=API;google.script.url.getLocation(l=>{const p=(l&&l.parameter)||{};BOOT.kode=p.kode||'';BOOT.mode=('layar' in p)?'layar':('tonton' in p)?'tonton':'';cb();});return;}
   const Q=new URLSearchParams(location.search);
   BOOT.mode=Q.has('layar')?'layar':Q.has('tonton')?'tonton':'';
+  BOOT.kode=Q.get('kode')||'';
   BOOT.url=(location.protocol==='http:'||location.protocol==='https:')?location.origin+location.pathname:API;
   cb();
 }
@@ -613,6 +642,7 @@ function renderCard(k){
   const ml=el.querySelector('.mlist');ml.scrollTop=ml.scrollHeight;fitText(el);LASTB[k]=JSON.stringify(B(k));
 }
 function renderAll(){
+  renderOpbar();
   $('#stage').innerHTML=visible().map(k=>`<section class="card" data-k="${k}"></section>`).join('');
   layout();visible().forEach(renderCard);renderTop();renderPanel();tickClocks();
   LASTG=JSON.stringify([ST.n,ST.showClock,VIEW,TAY,WHO&&WHO.boards]);
@@ -633,8 +663,8 @@ function renderPanel(){
   for(let k=0;k<ST.n;k++)opts.push(`<option value="${k}">${esc(B(k).label)} saja</option>`);
   fv.innerHTML=opts.join('');fv.value=(VIEW!=='all'&&+VIEW<ST.n)?String(VIEW):'all';
   $('#nOut').textContent=ST.n;
-  if(!WHO)return;
-  const mine=myBoards();if(!mine.length)return;
+  if(!WHO){renderOpbar();return;}
+  const mine=myBoards();if(!mine.length){renderOpbar();return;}
   if(!mine.includes(ACT))ACT=mine[0];
   $('#tabs').innerHTML=mine.map(i=>`<button class="btn tab ${i===ACT?'on':''}" data-t="${i}">${i+1}</button>`).join('');
   const bd=B(ACT),d=derivedOf(ACT),s=cur(ACT),rep=d.KEYS.filter(x=>x===d.KEYS[d.KEYS.length-1]).length;
@@ -642,10 +672,11 @@ function renderPanel(){
   $('#togRes').textContent=bd.showRes?'Sembunyikan skor':'Tampilkan skor';
   const cr=$('#clkRun');cr.textContent=bd.clock.run?'Jeda jam':'Mulai jam';cr.classList.toggle('warn',bd.clock.run);cr.classList.toggle('pri',!bd.clock.run);
   document.querySelectorAll('#stage .card').forEach(c=>c.classList.toggle('act',+c.dataset.k===ACT));
+  renderOpbar();
   if(WHO.role==='admin'){$('#fClock').checked=!!ST.showClock;$('#fPub').checked=!!ST.pub;$('#fQr').checked=!!ST.qr;const al=$('#archLink');al.hidden=!ARCHURL;if(ARCHURL)al.href=ARCHURL;}
 }
 function renderCodes(){
-  $('#codes').innerHTML=CODES.length?CODES.map((c,i)=>`<li><div><b>${esc(c.code)}</b><span>${esc(c.name)} · ${c.boards==='all'?'semua papan':'papan '+c.boards.map(x=>x+1).join(', ')}</span></div><button class="btn" data-del="${i}">Hapus</button></li>`).join(''):'<li><span>Belum ada kode operator.</span></li>';
+  $('#codes').innerHTML=CODES.length?CODES.map((c,i)=>`<li><div><b>${esc(c.code)}</b><span>${esc(c.name)} · ${boardsTxt(c.boards)}</span></div><div class="cbtn"><button class="btn" data-cp="${i}">Salin</button><button class="btn" data-del="${i}">Hapus</button></div></li>`).join(''):'<li><span>Belum ada kode operator.</span></li>';
 }
 function fillForm(){
   if(!WHO||!ST)return;
@@ -658,7 +689,7 @@ function fillForm(){
 function layout(){
   if(!ST)return;
   const W=document.documentElement.clientWidth,H=window.innerHeight,st=$('#stage'),root=document.documentElement.style;
-  const head=$('#top').offsetHeight,foot=$('#wm').offsetHeight,pad=Math.round(Math.max(8,Math.min(W,H)*.018)),gap=pad;
+  const head=$('#top').offsetHeight,foot=$('#wm').offsetHeight+($('#opbar').hidden?0:$('#opbar').offsetHeight),pad=Math.round(Math.max(8,Math.min(W,H)*.018)),gap=pad;
   const n=visible().length,vert=W<640;
   const fitH=h=>{const a=(h-6)/1.39;return a>=300?a:Math.min(300,(h-90)/1.11);};
   let bs=0,cols=1;
@@ -719,9 +750,34 @@ function toPGN(k,R){
 }
 
 /* ---------- masuk / keluar ---------- */
+let LROLE='op';
+function setLRole(r){LROLE=r;document.querySelectorAll('.lrole button').forEach(b=>b.classList.toggle('on',b.dataset.role===r));
+  $('#lLbl').textContent=r==='admin'?'Kode pengelola':'Kode operator';
+  $('#lHint').textContent=r==='admin'?'Kode pengelola ditulis di Code.gs (KODE_PENGELOLA_AWAL) atau yang sudah diganti di panel Kontrol.':'Kode operator diberikan pengelola. Satu kode bisa untuk satu meja atau semua meja.';}
 function showLogin(msg){
   $('#login').hidden=false;$('#lErr').textContent=msg||'';$('#lCode').value='';
-  $('#lView').hidden=!(ST&&ST.pub);
+  const v=$('#lView');
+  if(!ST){v.hidden=false;v.textContent='Coba sambungkan lagi';v.dataset.retry='1';}
+  else{v.dataset.retry='';v.textContent='Tonton live tanpa login';v.hidden=!ST.pub;$('#lEv').textContent=[ST.ev,ST.rd].filter(Boolean).join(' · ')||'Siaran langsung papan catur';}
+}
+const boardsTxt=b=>b==='all'?'semua meja':'meja '+b.map(x=>x+1).join(', ');
+function opLink(c){return BOOT.url+'?kode='+encodeURIComponent(c.code);}
+function codesText(){
+  const L=[`Kode operator – ${ST.ev||'Papan Catur Live'}${ST.rd?' · '+ST.rd:''}`,'',`Link masuk operator: ${BOOT.url}`,''];
+  CODES.forEach(c=>L.push(`${c.name} (${boardsTxt(c.boards)})`,`Kode: ${c.code}`,`Masuk langsung: ${opLink(c)}`,''));
+  L.push(`Link tonton live tanpa login: ${TONTON()}`);
+  return L.join('\n');
+}
+function renderOpbar(){
+  const bar=$('#opbar'),mine=WHO&&ST?myBoards():[],on=!!(mine.length&&!TAY);
+  bar.hidden=!on;document.body.classList.toggle('hasop',on);
+  document.body.style.paddingBottom=on?bar.offsetHeight+'px':'';
+  if(!on)return;
+  const sel=$('#obBoard');
+  sel.innerHTML=mine.map(k=>`<option value="${k}">${esc(B(k).label)}${B(k).result?' · selesai':''}</option>`).join('');
+  sel.value=String(ACT);sel.hidden=mine.length<2;
+  const bd=B(ACT);$('#obClock').textContent=bd.clock.run?'Jeda jam':'Mulai jam';$('#obClock').classList.toggle('warn',bd.clock.run);
+  $('#obClock').hidden=!ST.showClock;
 }
 function enter(who){
   WHO=who&&who.role?{role:who.role,name:who.name,boards:who.boards}:null;
@@ -729,7 +785,9 @@ function enter(who){
   if(who&&who.archiveUrl)ARCHURL=who.archiveUrl;
   $('#login').hidden=true;
   if(who&&who.state)applyState(who.state,who.now);
-  if(WHO){const mine=myBoards();if(mine.length&&!mine.includes(ACT))ACT=mine[0];if(WHO.boards!=='all'&&VIEW==='all'&&mine.length===1)VIEW=String(mine[0]);}
+  if(who&&who.url&&IN_GAS)BOOT.url=who.url;
+  if(WHO){const mine=myBoards();if(mine.length&&!mine.includes(ACT))ACT=mine[0];if(WHO.boards!=='all'&&VIEW==='all'&&mine.length===1)VIEW=String(mine[0]);
+    toast('Masuk sebagai '+WHO.name+' · '+boardsTxt(WHO.boards));}
   if(ST)renderAll();fillForm();
   if(BOOT.mode==='layar'&&!TAY)setTayang(true);
   poll();
@@ -742,11 +800,27 @@ function bind(){
     $('#lGo').disabled=true;$('#lErr').textContent='Memeriksa kode…';
     call('login',c).then(r=>{
       $('#lGo').disabled=false;
-      if(r.err){$('#lErr').textContent=r.err;return;}
+      if(r.err){$('#lErr').textContent=LROLE==='admin'?'Kode pengelola salah.':'Kode operator tidak dikenal. Minta kode ke pengelola.';return;}
+      if(LROLE==='admin'&&r.role!=='admin'){$('#lErr').textContent='Itu kode operator. Pilih tab "Operator meja" untuk memakainya.';return;}
       CODE=c;try{localStorage.setItem(LS,c);}catch(x){}enter(r);
     }).catch(()=>{$('#lGo').disabled=false;$('#lErr').textContent='Tidak bisa terhubung ke server.';});
   });
-  $('#lView').onclick=()=>enter(null);
+  $('#lView').onclick=()=>{if($('#lView').dataset.retry){$('#lErr').textContent='Menyambungkan…';first(Date.now());return;}enter(null);};
+  document.querySelectorAll('.lrole button').forEach(b=>b.onclick=()=>{setLRole(b.dataset.role);$('#lErr').textContent='';$('#lCode').focus();});
+  $('#obBoard').onchange=e=>{const k=+e.target.value;setActive(k);if(VIEW!=='all'&&+VIEW!==k){VIEW=String(k);renderAll();}};
+  $('#obUndo').onclick=()=>$('#undo').click();
+  $('#obClock').onclick=()=>$('#clkRun').click();
+  $('#obRes').onclick=()=>{togglePanel(true);setTimeout(()=>$('#fWhy').scrollIntoView({block:'center',behavior:'smooth'}),260);};
+  $('#cAuto').onclick=()=>{
+    const list=CODES.slice(),used=new Set(list.map(c=>c.code));
+    const gen=()=>{let c;do{c=genCode();}while(used.has(c));used.add(c);return c;};
+    let added=0;
+    for(let k=0;k<ST.n;k++){if(!list.some(c=>Array.isArray(c.boards)&&c.boards.length===1&&c.boards[0]===k)){list.push({name:'Operator '+B(k).label,code:gen(),boards:[k]});added++;}}
+    if(!list.some(c=>c.boards==='all')){list.push({name:'Operator semua meja',code:gen(),boards:'all'});added++;}
+    if(!added){$('#cNote').textContent='Setiap meja sudah punya kode.';return;}
+    send({t:'codes',v:list}).then(r=>{if(r&&!r.err)$('#cNote').textContent=added+' kode dibuat. Tekan "Salin daftar kode" lalu kirim ke operator.';});
+  };
+  $('#cList').onclick=()=>{if(!CODES.length){$('#cNote').textContent='Belum ada kode operator.';return;}copyText(codesText(),$('#cNote'));};
   $('#shareBtn').onclick=openShare;
   $('#archBtn').onclick=openArch;
   document.querySelectorAll('.dlg').forEach(dl=>dl.addEventListener('click',e=>{if(e.target===dl||e.target.closest('[data-close]'))dl.hidden=true;}));
@@ -833,7 +907,7 @@ function bind(){
     const boards=raw?raw.split(/[\s,;]+/).map(Number).filter(n=>n>=1&&n<=MAXB).map(n=>n-1):'all';
     send({t:'codes',v:CODES.concat([{name,code,boards}])}).then(r=>{if(r&&!r.err){$('#cName').value='';$('#cBoards').value='';$('#cCode').value=genCode();toast('Kode '+code+' dibuat untuk '+name+'.');}});
   };
-  $('#codes').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b)send({t:'codes',v:CODES.filter((_,i)=>i!==+b.dataset.del)});});
+  $('#codes').addEventListener('click',e=>{const cp=e.target.closest('[data-cp]');if(cp){const c=CODES[+cp.dataset.cp];copyText(`${c.name} (${boardsTxt(c.boards)})\nKode: ${c.code}\nMasuk langsung: ${opLink(c)}`,$('#cNote'));return;}const b=e.target.closest('[data-del]');if(b)send({t:'codes',v:CODES.filter((_,i)=>i!==+b.dataset.del)});});
   $('#admSave').onclick=()=>{const v=$('#fAdm').value.trim();if(v.length<6){$('#admNote').textContent='Kode pengelola minimal 6 karakter.';return;}send({t:'adminCode',v}).then(()=>{$('#fAdm').value='';});};
   addEventListener('keydown',e=>{
     if(e.target.closest&&e.target.closest('input,textarea,select'))return;
@@ -920,17 +994,20 @@ function genCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i
 function start(){
   bind();
   const t0=Date.now();
+  if(BOOT.kode){CODE=String(BOOT.kode).trim().toUpperCase();try{localStorage.setItem(LS,CODE);}catch(x){}
+    if(!IN_GAS&&history.replaceState){try{const u=new URL(location.href);u.searchParams.delete('kode');history.replaceState(null,'',u.pathname+u.search);}catch(x){}}}
   if(CODE){
-    call('login',CODE).then(r=>{if(r.err){CODE='';try{localStorage.removeItem(LS);}catch(x){}return first(t0);}enter(r);}).catch(()=>first(t0));
+    call('login',CODE).then(r=>{if(r.err){CODE='';try{localStorage.removeItem(LS);}catch(x){}return first(t0,BOOT.kode?'Kode di link tidak berlaku. Minta kode baru ke pengelola.':'');}enter(r);}).catch(()=>first(t0));
   }else first(t0);
 }
-function first(t0){
+function first(t0,msg){
   call('getState','',-1).then(r=>{
+    if(r.url&&IN_GAS)BOOT.url=r.url;
     if(r.state)applyState(r.state,r.now,t0);
     if(r.state&&(BOOT.mode==='layar'||BOOT.mode==='tonton')){enter(null);return;}
     if(!r.state&&BOOT.mode){showLogin('Papan ini hanya bisa ditonton dengan kode akses.');return;}
-    showLogin('');
-  }).catch(()=>showLogin('Tidak bisa terhubung ke server.'));
+    showLogin(msg||'');
+  }).catch(()=>{ST=null;showLogin('Tidak bisa terhubung ke server Apps Script. Pastikan Code.gs terbaru sudah di-deploy (Kelola deployment → Versi baru), lalu coba lagi.');});
 }
 boot(start);
 }
